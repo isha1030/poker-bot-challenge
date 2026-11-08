@@ -23,7 +23,7 @@ from game import Action, AgentConfig, HandResult, Observation, Street
 
 
 # Rename these before submission.
-PARTICIPANT = "3/4ths"
+PARTICIPANT = "three fourths"
 AGENT_NAME = "3/7"
 
 
