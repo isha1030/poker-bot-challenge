@@ -50,7 +50,7 @@ def start_half(client, half=1, seat=0):
     return client.post("/new-half", json=body, headers=AUTH)
 
 
-def play_hands(client, num_hands, seed="test", raise_rate=0.3):
+def play_hands(client, num_hands, seed="test", raise_rate=0.3, bot_seat=0):
     """Play hands where YOUR bot is seat 0 and a random opponent is seat 1.
 
     Every decision goes through /act exactly like in a real match, and
@@ -65,7 +65,7 @@ def play_hands(client, num_hands, seed="test", raise_rate=0.3):
         while not game.is_terminal:
             seat = game.to_act
             obs = game.observation(seat)
-            if seat == 0:
+            if seat == bot_seat:
                 r = client.post("/act", json={"observation": obs.to_dict(), "hand_results": pending},
                                 headers=AUTH)
                 pending = []
@@ -82,7 +82,7 @@ def play_hands(client, num_hands, seed="test", raise_rate=0.3):
                 raises = [a for a in obs.legal_actions if a in (Action.RAISE_HALF, Action.RAISE_POT)]
                 action = rng.choice(raises) if raises and rng.random() < raise_rate else Action.CHECK_CALL
             game.apply(action)
-        pending.append(game.hand_result(0).to_dict())
+        pending.append(game.hand_result(bot_seat).to_dict())
     r = client.post("/hand-end", json={"results": pending}, headers=AUTH)  # end of half
     assert r.status_code == 200 and r.json()["hand_end_errors"] == []
     return chosen
@@ -116,7 +116,7 @@ def test_works_in_both_seats_and_both_halves(bot):
     _, client = bot
     for half, seat in ((1, 0), (2, 1)):
         assert start_half(client, half, seat).status_code == 200
-        play_hands(client, 30, seed=f"half{half}")
+        play_hands(client, 30, seed=f"half{half}", bot_seat=seat)
 
 
 def test_handles_aggressive_opponent(bot):
